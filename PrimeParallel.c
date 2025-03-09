@@ -4,36 +4,33 @@
 #include <stdbool.h>
 #include <omp.h>
 
-// Function to compute prime numbers using the Sieve of Eratosthenes
-void sieveOfEratosthenes(int N, int num_threads) {
+// Function to find prime numbers using the Sieve of Eratosthenes
+void sieveOfEratosthenes(int N, int num_threads, int chunk_size) {
     bool *isPrime = (bool *)malloc((N + 1) * sizeof(bool));
-    
-    if (isPrime == NULL) {
-        printf("Memory allocation failed!\n");
-        return;
-    }
 
-    // Initialize all values to true (assuming all numbers are prime)
-    #pragma omp parallel for schedule(static) num_threads(num_threads)
+    // Parallel initialization of isPrime array
+    #pragma omp parallel for schedule(static, chunk_size)
     for (int i = 0; i <= N; i++)
         isPrime[i] = true;
 
     isPrime[0] = isPrime[1] = false; // 0 and 1 are not prime
 
-    int sqrtN = (int)sqrt(N);  // Convert sqrt(N) to an integer
+    omp_set_num_threads(num_threads); // Set the number of threads
 
-    #pragma omp parallel for schedule(static) num_threads(num_threads)
-    for (int i = 2; i <= sqrtN; i++) {
+    int sqrt_N = (int)sqrt(N); // Precompute square root of N to avoid redundant calculations
+
+    #pragma omp parallel for schedule(dynamic, chunk_size)
+    for (int i = 2; i <= sqrt_N; i++) {
         if (isPrime[i]) {
-            // Use OpenMP parallelization for marking non-prime numbers
-            #pragma omp parallel for schedule(static) num_threads(num_threads)
             for (int j = i * i; j <= N; j += i) {
                 isPrime[j] = false;
             }
         }
     }
 
-    // Print the prime numbers
+    // Barrier to ensure all threads finish before printing
+    #pragma omp barrier
+
     printf("Prime numbers up to %d:\n", N);
     for (int i = 2; i <= N; i++) {
         if (isPrime[i])
@@ -46,19 +43,20 @@ void sieveOfEratosthenes(int N, int num_threads) {
 
 int main() {
     int N = 10000; // Upper limit for prime numbers
-    int num_threads;
+    int num_threads, chunk_size;
 
     printf("Enter the number of threads: ");
-    if (scanf("%d", &num_threads) != 1 || num_threads <= 0) {
-        printf("Invalid input! Please enter a positive integer.\n");
-        return 1;
-    }
+    scanf("%d", &num_threads);
+
+    printf("Enter the chunk size: ");
+    scanf("%d", &chunk_size);
 
     double start_time = omp_get_wtime();
-    sieveOfEratosthenes(N, num_threads);
+    sieveOfEratosthenes(N, num_threads, chunk_size);
     double end_time = omp_get_wtime();
 
-    printf("\nExecution Time: %.6f seconds with %d threads\n", (end_time - start_time), num_threads);
-
+    printf("\nExecution Time: %.3f seconds with %d threads and chunk size %d\n", 
+           (end_time - start_time), num_threads, chunk_size);
+    
     return 0;
 }
