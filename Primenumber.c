@@ -22,10 +22,10 @@ void sieveOfEratosthenes(int N) {
     free(isPrime);
 }
 
-double get_time_in_milliseconds() {
+double get_time_in_seconds() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    return (tv.tv_sec * 1000.0) + (tv.tv_usec / 1000.0); // Convert to milliseconds
+    return tv.tv_sec + (tv.tv_usec / 1000000.0); // Convert to seconds
 }
 
 int main() {
@@ -34,19 +34,19 @@ int main() {
     double total_time = 0.0;
 
     for (int i = 0; i < iterations; i++) {
-        double start = get_time_in_milliseconds();
+        double start = get_time_in_seconds();
 
         sieveOfEratosthenes(N);
 
-        double end = get_time_in_milliseconds();
+        double end = get_time_in_seconds();
         double time_taken = end - start;
         total_time += time_taken;
 
-        printf("Iteration %d Execution Time: %.3f ms\n", i + 1, time_taken);
+        printf("Iteration %d Execution Time: %.6f s\n", i + 1, time_taken);
     }
 
     double avg_time = total_time / iterations;
-    printf("\nAverage Execution Time over %d runs: %.3f ms\n", iterations, avg_time);
+    printf("\nAverage Execution Time over %d runs: %.6f s\n", iterations, avg_time);
 
     return 0;
 }
